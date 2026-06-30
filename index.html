@@ -3,27 +3,183 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- 検索エンジンにインデックスさせない -->
 <meta name="robots" content="noindex, nofollow">
 <title>ハローアルバム</title>
 <style>
-  body {
+  * { box-sizing: border-box; }
+  html, body {
     margin: 0;
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #fdf6e3, #f7e7ce);
+    padding: 0;
+    background: #05060f;
     font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    color: #f3eee0;
+    overflow-x: hidden;
   }
-  h1 {
-    font-size: 2.5rem;
-    color: #5c4632;
+
+  #sky {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(80,60,160,0.25), transparent 60%),
+      radial-gradient(ellipse at 80% 30%, rgba(40,70,150,0.25), transparent 60%),
+      linear-gradient(180deg, #050714 0%, #0a0d24 40%, #11132f 100%);
+  }
+  .star {
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+    opacity: 0.8;
+    animation: twinkle 3s infinite ease-in-out;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 1; }
+  }
+
+  header {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 60px 20px 30px;
+  }
+  header h1 {
+    font-size: 2.2rem;
+    letter-spacing: 0.1em;
+    margin: 0;
+    text-shadow: 0 0 20px rgba(255,255,255,0.4);
+  }
+  header p {
+    margin-top: 10px;
+    color: #b8b3d8;
+    font-size: 0.9rem;
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 20px 16px 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 70px;
+  }
+
+  .photo-card {
+    position: relative;
+    text-align: center;
+    animation: float 6s ease-in-out infinite;
+  }
+  .photo-card:nth-child(odd) { animation-delay: 0s; }
+  .photo-card:nth-child(even) { animation-delay: 1.5s; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+  }
+
+  .photo-card img {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 10px;
+    box-shadow:
+      0 0 40px rgba(150,160,255,0.25),
+      0 20px 50px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .photo-date {
+    margin-top: 14px;
+    font-size: 0.85rem;
     letter-spacing: 0.05em;
+    color: #cfc9ef;
+  }
+  .photo-caption {
+    margin-top: 4px;
+    font-size: 0.95rem;
+    color: #f3eee0;
+  }
+
+  #empty-msg {
+    text-align: center;
+    color: #8b86b3;
+    padding: 60px 20px;
   }
 </style>
 </head>
 <body>
-  <h1>ハローアルバム</h1>
+  <div id="sky"></div>
+
+  <header>
+    <h1>ハローアルバム</h1>
+    <p>大切な思い出を、夜空に</p>
+  </header>
+
+  <main id="album"></main>
+
+  <script>
+    const sky = document.getElementById('sky');
+    const starCount = 120;
+    for (let i = 0; i < starCount; i++) {
+      const star = document.createElement('div');
+      star.className = 'star';
+      const size = Math.random() * 2 + 1;
+      star.style.width = size + 'px';
+      star.style.height = size + 'px';
+      star.style.left = Math.random() * 100 + '%';
+      star.style.top = Math.random() * 100 + '%';
+      star.style.animationDelay = (Math.random() * 3) + 's';
+      sky.appendChild(star);
+    }
+
+    function formatDate(yyyymmdd) {
+      const s = String(yyyymmdd);
+      if (s.length !== 8) return s;
+      return `${s.slice(0,4)}年${s.slice(4,6)}月${s.slice(6,8)}日`;
+    }
+
+    fetch('photos.json')
+      .then(res => res.json())
+      .then(photos => {
+        const album = document.getElementById('album');
+
+        if (!photos || photos.length === 0) {
+          album.innerHTML = '<div id="empty-msg">まだ写真がありません</div>';
+          return;
+        }
+
+        photos.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+
+        photos.forEach(photo => {
+          const card = document.createElement('div');
+          card.className = 'photo-card';
+
+          const img = document.createElement('img');
+          img.src = 'images/' + photo.file;
+          img.alt = photo.caption || '';
+          img.loading = 'lazy';
+
+          const dateEl = document.createElement('div');
+          dateEl.className = 'photo-date';
+          dateEl.textContent = formatDate(photo.date);
+
+          card.appendChild(img);
+          card.appendChild(dateEl);
+
+          if (photo.caption) {
+            const cap = document.createElement('div');
+            cap.className = 'photo-caption';
+            cap.textContent = photo.caption;
+            card.appendChild(cap);
+          }
+
+          album.appendChild(card);
+        });
+      })
+      .catch(() => {
+        document.getElementById('album').innerHTML =
+          '<div id="empty-msg">photos.json の読み込みに失敗しました</div>';
+      });
+  </script>
 </body>
 </html>
