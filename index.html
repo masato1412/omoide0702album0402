@@ -6,180 +6,349 @@
 <meta name="robots" content="noindex, nofollow">
 <title>ハローアルバム</title>
 <style>
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
   html, body {
-    margin: 0;
-    padding: 0;
     background: #05060f;
     font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
     color: #f3eee0;
     overflow-x: hidden;
   }
 
+  /* ======= 夜空キャンバス ======= */
   #sky {
     position: fixed;
     inset: 0;
     z-index: 0;
-    background:
-      radial-gradient(ellipse at 20% 10%, rgba(80,60,160,0.25), transparent 60%),
-      radial-gradient(ellipse at 80% 30%, rgba(40,70,150,0.25), transparent 60%),
-      linear-gradient(180deg, #050714 0%, #0a0d24 40%, #11132f 100%);
+    background: linear-gradient(180deg, #050714 0%, #0a0d24 50%, #11132f 100%);
+    overflow: hidden;
   }
+
+  /* 星 */
   .star {
     position: absolute;
     background: #fff;
     border-radius: 50%;
-    opacity: 0.8;
-    animation: twinkle 3s infinite ease-in-out;
+    animation: twinkle var(--dur) infinite ease-in-out var(--delay);
   }
   @keyframes twinkle {
-    0%, 100% { opacity: 0.2; }
+    0%, 100% { opacity: 0.15; }
     50% { opacity: 1; }
   }
 
+  /* 流れ星(背景装飾) */
+  .shooting-star {
+    position: absolute;
+    width: var(--len);
+    height: 1.5px;
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 100%);
+    border-radius: 1px;
+    transform-origin: right center;
+    transform: rotate(-30deg);
+    animation: shoot var(--sdur) linear var(--sdelay) infinite;
+    opacity: 0;
+  }
+  @keyframes shoot {
+    0%   { opacity: 0; transform: rotate(-30deg) translateX(0); }
+    5%   { opacity: 1; }
+    80%  { opacity: 1; }
+    100% { opacity: 0; transform: rotate(-30deg) translateX(calc(var(--len) * 3)); }
+  }
+
+  /* ======= ヘッダー ======= */
   header {
     position: relative;
     z-index: 1;
     text-align: center;
-    padding: 60px 20px 30px;
+    padding: 60px 20px 20px;
   }
   header h1 {
-    font-size: 2.2rem;
-    letter-spacing: 0.1em;
-    margin: 0;
-    text-shadow: 0 0 20px rgba(255,255,255,0.4);
+    font-size: 2rem;
+    letter-spacing: 0.12em;
+    text-shadow: 0 0 30px rgba(180,180,255,0.5);
   }
   header p {
-    margin-top: 10px;
-    color: #b8b3d8;
-    font-size: 0.9rem;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #9993cc;
   }
 
-  main {
+  /* ======= アルバム本体 ======= */
+  #album {
     position: relative;
     z-index: 1;
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 20px 16px 120px;
-    display: flex;
-    flex-direction: column;
-    gap: 70px;
+    padding: 40px 0 120px;
   }
 
-  .photo-card {
+  /* 各行ラッパー: 画像がここを左→右(または右→左)に流れる */
+  .photo-row {
     position: relative;
-    text-align: center;
-    animation: float 6s ease-in-out infinite;
+    height: 260px;
+    margin-bottom: 20px;
+    overflow: hidden;
   }
-  .photo-card:nth-child(odd) { animation-delay: 0s; }
-  .photo-card:nth-child(even) { animation-delay: 1.5s; }
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-12px); }
+  /* 流れ星カード */
+  .photo-card {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    animation: drift var(--drift-dur) linear var(--drift-delay) infinite;
+    filter: drop-shadow(0 0 18px rgba(140,150,255,0.3));
+    transition: filter 0.2s;
+  }
+  .photo-card:active {
+    filter: drop-shadow(0 0 28px rgba(200,210,255,0.7));
+  }
+
+  /* 左→右方向 */
+  .photo-card.ltr {
+    animation-name: drift-ltr;
+  }
+  /* 右→左方向 */
+  .photo-card.rtl {
+    animation-name: drift-rtl;
+  }
+
+  @keyframes drift-ltr {
+    0%   { left: -340px; opacity: 0; }
+    8%   { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { left: calc(100% + 40px); opacity: 0; }
+  }
+  @keyframes drift-rtl {
+    0%   { right: -340px; left: auto; opacity: 0; }
+    8%   { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { right: calc(100% + 40px); left: auto; opacity: 0; }
+  }
+
+  /* 流れ星の尾(疑似要素) */
+  .photo-card::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 80px;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(200,210,255,0.5) 100%);
+    transform: translateY(-50%);
+    border-radius: 1px;
+  }
+  .photo-card.ltr::before {
+    right: 100%;
+    margin-right: 2px;
+  }
+  .photo-card.rtl::before {
+    left: 100%;
+    margin-left: 2px;
+    transform: translateY(-50%) scaleX(-1);
   }
 
   .photo-card img {
-    max-width: 100%;
-    max-height: 70vh;
+    display: block;
+    max-height: 220px;
+    max-width: min(80vw, 320px);
     border-radius: 10px;
-    box-shadow:
-      0 0 40px rgba(150,160,255,0.25),
-      0 20px 50px rgba(0,0,0,0.6);
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    object-fit: cover;
+    pointer-events: none;
+    user-select: none;
   }
-  .photo-date {
-    margin-top: 14px;
-    font-size: 0.85rem;
-    letter-spacing: 0.05em;
+
+  /* 日付ラベル */
+  .photo-meta {
+    text-align: center;
+    margin-top: 6px;
+    font-size: 0.72rem;
+    color: #b0aad8;
+    letter-spacing: 0.04em;
+  }
+
+  /* ======= ライトボックス ======= */
+  #lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(2, 3, 14, 0.92);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+  }
+  #lightbox.open {
+    display: flex;
+  }
+  #lightbox img {
+    max-width: 100%;
+    max-height: 75vh;
+    border-radius: 12px;
+    box-shadow: 0 0 60px rgba(150,160,255,0.35);
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  #lightbox-meta {
+    font-size: 0.9rem;
     color: #cfc9ef;
+    text-align: center;
   }
-  .photo-caption {
-    margin-top: 4px;
-    font-size: 0.95rem;
-    color: #f3eee0;
+  #lightbox-close {
+    position: fixed;
+    top: 18px;
+    right: 20px;
+    font-size: 2rem;
+    color: #ccc;
+    cursor: pointer;
+    line-height: 1;
+    background: none;
+    border: none;
+    padding: 4px 8px;
   }
 
   #empty-msg {
     text-align: center;
-    color: #8b86b3;
-    padding: 60px 20px;
+    color: #6b66a0;
+    padding: 80px 20px;
+    font-size: 0.9rem;
   }
 </style>
 </head>
 <body>
-  <div id="sky"></div>
 
-  <header>
-    <h1>ハローアルバム</h1>
-    <p>大切な思い出を、夜空に</p>
-  </header>
+<div id="sky"></div>
 
-  <main id="album"></main>
+<header>
+  <h1>ハローアルバム</h1>
+  <p>思い出が、夜空を流れていく</p>
+</header>
 
-  <script>
-    const sky = document.getElementById('sky');
-    const starCount = 120;
-    for (let i = 0; i < starCount; i++) {
-      const star = document.createElement('div');
-      star.className = 'star';
-      const size = Math.random() * 2 + 1;
-      star.style.width = size + 'px';
-      star.style.height = size + 'px';
-      star.style.left = Math.random() * 100 + '%';
-      star.style.top = Math.random() * 100 + '%';
-      star.style.animationDelay = (Math.random() * 3) + 's';
-      sky.appendChild(star);
-    }
+<div id="album"></div>
 
-    function formatDate(yyyymmdd) {
-      const s = String(yyyymmdd);
-      if (s.length !== 8) return s;
-      return `${s.slice(0,4)}年${s.slice(4,6)}月${s.slice(6,8)}日`;
-    }
+<!-- ライトボックス -->
+<div id="lightbox" role="dialog" aria-modal="true">
+  <button id="lightbox-close" aria-label="閉じる">×</button>
+  <img id="lightbox-img" src="" alt="" />
+  <div id="lightbox-meta"></div>
+</div>
 
-    fetch('photos.json')
-      .then(res => res.json())
-      .then(photos => {
-        const album = document.getElementById('album');
+<script>
+  /* ===== 夜空: 星 ===== */
+  const sky = document.getElementById('sky');
+  for (let i = 0; i < 140; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2 + 0.8;
+    s.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%;
+      top:${Math.random()*100}%;
+      --dur:${(Math.random()*3+2).toFixed(1)}s;
+      --delay:-${(Math.random()*4).toFixed(1)}s;
+    `;
+    sky.appendChild(s);
+  }
 
-        if (!photos || photos.length === 0) {
-          album.innerHTML = '<div id="empty-msg">まだ写真がありません</div>';
-          return;
-        }
+  /* ===== 夜空: 流れ星(装飾) ===== */
+  for (let i = 0; i < 6; i++) {
+    const ss = document.createElement('div');
+    ss.className = 'shooting-star';
+    const len = Math.random() * 80 + 60;
+    ss.style.cssText = `
+      --len:${len}px;
+      --sdur:${(Math.random()*2+2).toFixed(1)}s;
+      --sdelay:${(Math.random()*12).toFixed(1)}s;
+      top:${Math.random()*60}%;
+      left:${Math.random()*70}%;
+    `;
+    sky.appendChild(ss);
+  }
 
-        photos.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  /* ===== 日付フォーマット ===== */
+  function formatDate(d) {
+    const s = String(d);
+    if (s.length !== 8) return s;
+    return `${s.slice(0,4)}年${s.slice(4,6)}月${s.slice(6,8)}日`;
+  }
 
-        photos.forEach(photo => {
-          const card = document.createElement('div');
-          card.className = 'photo-card';
+  /* ===== ライトボックス ===== */
+  const lightbox     = document.getElementById('lightbox');
+  const lbImg        = document.getElementById('lightbox-img');
+  const lbMeta       = document.getElementById('lightbox-meta');
+  const lbClose      = document.getElementById('lightbox-close');
 
-          const img = document.createElement('img');
-          img.src = 'images/' + photo.file;
-          img.alt = photo.caption || '';
-          img.loading = 'lazy';
+  function openLightbox(src, alt, date, caption) {
+    lbImg.src = src;
+    lbImg.alt = alt;
+    lbMeta.textContent = [formatDate(date), caption].filter(Boolean).join('　');
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox() {
+    lightbox.classList.remove('open');
+    lbImg.src = '';
+    document.body.style.overflow = '';
+  }
 
-          const dateEl = document.createElement('div');
-          dateEl.className = 'photo-date';
-          dateEl.textContent = formatDate(photo.date);
+  lbClose.addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
 
-          card.appendChild(img);
-          card.appendChild(dateEl);
+  /* ===== 写真読み込み・描画 ===== */
+  fetch('photos.json')
+    .then(r => r.json())
+    .then(photos => {
+      const album = document.getElementById('album');
 
-          if (photo.caption) {
-            const cap = document.createElement('div');
-            cap.className = 'photo-caption';
-            cap.textContent = photo.caption;
-            card.appendChild(cap);
-          }
+      if (!photos || photos.length === 0) {
+        album.innerHTML = '<div id="empty-msg">まだ写真がありません</div>';
+        return;
+      }
 
-          album.appendChild(card);
+      // 新しい日付順
+      photos.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+
+      // 流れる速度・方向をランダムに割り振り
+      const durations  = [18, 22, 26, 30, 24, 20];
+      const directions = ['ltr', 'rtl', 'ltr', 'rtl', 'rtl', 'ltr'];
+
+      photos.forEach((photo, i) => {
+        const row = document.createElement('div');
+        row.className = 'photo-row';
+
+        const card = document.createElement('div');
+        const dir  = directions[i % directions.length];
+        const dur  = durations[i % durations.length];
+        // delayをずらして密集しないようにする
+        const delay = -(dur * (i % 5) / 5);
+        card.className = `photo-card ${dir}`;
+        card.style.cssText = `--drift-dur:${dur}s; --drift-delay:${delay}s;`;
+
+        const img = document.createElement('img');
+        img.src     = 'images/' + photo.file;
+        img.alt     = photo.caption || '';
+        img.loading = 'lazy';
+
+        const meta = document.createElement('div');
+        meta.className   = 'photo-meta';
+        meta.textContent = formatDate(photo.date) + (photo.caption ? '　' + photo.caption : '');
+
+        card.appendChild(img);
+        card.appendChild(meta);
+
+        // タップ/クリックでライトボックス
+        card.addEventListener('click', () => {
+          openLightbox('images/' + photo.file, photo.caption || '', photo.date, photo.caption);
         });
-      })
-      .catch(() => {
-        document.getElementById('album').innerHTML =
-          '<div id="empty-msg">photos.json の読み込みに失敗しました</div>';
+
+        row.appendChild(card);
+        album.appendChild(row);
       });
-  </script>
+    })
+    .catch(() => {
+      document.getElementById('album').innerHTML =
+        '<div id="empty-msg">photos.json の読み込みに失敗しました</div>';
+    });
+</script>
 </body>
 </html>
