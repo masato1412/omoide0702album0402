@@ -80,7 +80,6 @@
     padding: 40px 0 120px;
   }
 
-  /* 各行ラッパー: 画像がここを左→右(または右→左)に流れる */
   .photo-row {
     position: relative;
     height: 260px;
@@ -88,75 +87,76 @@
     overflow: hidden;
   }
 
-  /* 流れ星カード */
+  /* ======= 流れ星カード（斜め移動） ======= */
   .photo-card {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
     cursor: pointer;
-    animation: drift var(--drift-dur) linear var(--drift-delay) infinite;
     filter: drop-shadow(0 0 18px rgba(140,150,255,0.3));
     transition: filter 0.2s;
+    animation: drift-diagonal var(--drift-dur) linear var(--drift-delay) infinite;
   }
   .photo-card:active {
     filter: drop-shadow(0 0 28px rgba(200,210,255,0.7));
   }
 
-  /* 左→右方向 */
-  .photo-card.ltr {
-    animation-name: drift-ltr;
-  }
-  /* 右→左方向 */
-  .photo-card.rtl {
-    animation-name: drift-rtl;
-  }
-
-  @keyframes drift-ltr {
-    0%   { left: -340px; opacity: 0; }
-    8%   { opacity: 1; }
-    88%  { opacity: 1; }
-    100% { left: calc(100% + 40px); opacity: 0; }
-  }
-  @keyframes drift-rtl {
-    0%   { right: -340px; left: auto; opacity: 0; }
-    8%   { opacity: 1; }
-    88%  { opacity: 1; }
-    100% { right: calc(100% + 40px); left: auto; opacity: 0; }
+  @keyframes drift-diagonal {
+    0% {
+      transform: translate(-200px, -200px) rotate(var(--angle));
+      opacity: 0;
+    }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% {
+      transform: translate(120vw, 120vh) rotate(var(--angle));
+      opacity: 0;
+    }
   }
 
-  /* 流れ星の尾(疑似要素) */
+  /* 流れ星の尾 */
   .photo-card::before {
     content: '';
     position: absolute;
     top: 50%;
-    width: 80px;
+    width: 120px;
     height: 2px;
     background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(200,210,255,0.5) 100%);
     transform: translateY(-50%);
     border-radius: 1px;
+    left: -130px;
   }
-  .photo-card.ltr::before {
-    right: 100%;
-    margin-right: 2px;
+
+  /* ======= 画像形状バリエーション ======= */
+  .shape-round img {
+    border-radius: 50%;
   }
-  .photo-card.rtl::before {
-    left: 100%;
-    margin-left: 2px;
-    transform: translateY(-50%) scaleX(-1);
+
+  .shape-star img {
+    clip-path: polygon(
+      50% 0%, 61% 35%, 98% 35%, 
+      68% 57%, 79% 91%, 50% 70%, 
+      21% 91%, 32% 57%, 2% 35%, 
+      39% 35%
+    );
+  }
+
+  .shape-hex img {
+    clip-path: polygon(
+      25% 0%, 75% 0%, 
+      100% 50%, 75% 100%, 
+      25% 100%, 0% 50%
+    );
   }
 
   .photo-card img {
     display: block;
-    max-height: 220px;
-    max-width: min(80vw, 320px);
-    border-radius: 10px;
     border: 1px solid rgba(255,255,255,0.1);
     object-fit: cover;
     pointer-events: none;
     user-select: none;
   }
 
-  /* 日付ラベル */
   .photo-meta {
     text-align: center;
     margin-top: 6px;
@@ -200,7 +200,6 @@
     font-size: 2rem;
     color: #ccc;
     cursor: pointer;
-    line-height: 1;
     background: none;
     border: none;
     padding: 4px 8px;
@@ -300,29 +299,43 @@
         return;
       }
 
-      // 新しい日付順
       photos.sort((a, b) => String(b.date).localeCompare(String(a.date)));
-
-      // 流れる速度・方向をランダムに割り振り
-      const durations  = [18, 22, 26, 30, 24, 20];
-      const directions = ['ltr', 'rtl', 'ltr', 'rtl', 'rtl', 'ltr'];
 
       photos.forEach((photo, i) => {
         const row = document.createElement('div');
         row.className = 'photo-row';
 
         const card = document.createElement('div');
-        const dir  = directions[i % directions.length];
-        const dur  = durations[i % durations.length];
-        // delayをずらして密集しないようにする
-        const delay = -(dur * (i % 5) / 5);
-        card.className = `photo-card ${dir}`;
-        card.style.cssText = `--drift-dur:${dur}s; --drift-delay:${delay}s;`;
+
+        /* ランダム形状 */
+        const shapes = ['shape-round', 'shape-star', 'shape-hex'];
+        const shape = shapes[Math.floor(Math.random() * shapes.length)];
+
+        /* ランダム速度（10〜32秒） */
+        const dur = Math.random() * 22 + 10;
+
+        /* ランダム遅延 */
+        const delay = -(Math.random() * dur);
+
+        /* ランダム角度（-60〜60度） */
+        const angle = (Math.random() * 120 - 60).toFixed(1) + 'deg';
+
+        /* ランダムサイズ（150〜320px） */
+        const size = Math.random() * 170 + 150;
+
+        card.className = `photo-card ${shape}`;
+        card.style.cssText = `
+          --drift-dur:${dur}s;
+          --drift-delay:${delay}s;
+          --angle:${angle};
+        `;
 
         const img = document.createElement('img');
         img.src     = 'images/' + photo.file;
         img.alt     = photo.caption || '';
         img.loading = 'lazy';
+        img.style.maxWidth = size + 'px';
+        img.style.maxHeight = size + 'px';
 
         const meta = document.createElement('div');
         meta.className   = 'photo-meta';
@@ -331,7 +344,6 @@
         card.appendChild(img);
         card.appendChild(meta);
 
-        // タップ/クリックでライトボックス
         card.addEventListener('click', () => {
           openLightbox('images/' + photo.file, photo.caption || '', photo.date, photo.caption);
         });
