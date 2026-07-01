@@ -53,7 +53,7 @@
   @keyframes bg-shoot {
     0% {
       opacity: 0;
-      transform: translate(-20vw, -20vh) rotate(45deg);
+      transform: translate(-20vw, -40vh) rotate(45deg);
     }
     10% { opacity: 1; }
     90% { opacity: 1; }
@@ -80,8 +80,6 @@
   /* ======= 流れ星カード（画像） ======= */
   .photo-card {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
     cursor: pointer;
     filter: drop-shadow(0 0 18px rgba(140,150,255,0.3));
     transition: filter 0.2s;
@@ -90,7 +88,7 @@
 
   @keyframes drift-diagonal {
     0% {
-      transform: translate(-200px, -200px) rotate(var(--angle));
+      transform: translate(-20vw, -40vh) rotate(var(--angle));
       opacity: 0;
     }
     10% { opacity: 1; }
@@ -234,13 +232,15 @@
     const ss = document.createElement('div');
     ss.className = 'shooting-star';
     const len = Math.random() * 120 + 80;
+
     ss.style.cssText = `
       --len:${len}px;
       --sdur:${(Math.random()*3+2).toFixed(1)}s;
       --sdelay:${(Math.random()*10).toFixed(1)}s;
-      top:${Math.random()*20}%;
-      left:${Math.random()*40}%;
+      top:${Math.random()*10 - 20}vh;   /* -20〜-10vh（画面上の外側） */
+      left:${Math.random()*40}vw;
     `;
+
     sky.appendChild(ss);
   }
 
